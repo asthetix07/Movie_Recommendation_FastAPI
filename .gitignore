@@ -1,0 +1,22 @@
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Virtual environment
+venv/
+.env/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+.env
+*.env
+# OS / misc
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Pickle files (optional - include if you don't want them in git)
+*.pkl
