@@ -6,7 +6,7 @@ import streamlit as st
 # =====================================================================
 # CONFIG
 # =====================================================================
-API_BASE = os.environ.get("API_BASE", "https://movie-rec-466x.onrender.com")
+API_BASE = os.environ.get("API_BASE")
 TMDB_IMG = "https://image.tmdb.org/t/p/w500"
 
 st.set_page_config(
