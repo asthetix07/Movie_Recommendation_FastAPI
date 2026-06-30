@@ -7,10 +7,11 @@ venv/
 .env/
 
 # Jupyter Notebook checkpoints
-
+.ipynb_checkpoints/
 
 .env
 *.env
+
 # OS / misc
 .DS_Store
 Thumbs.db
@@ -18,4 +19,12 @@ Thumbs.db
 # Logs
 *.log
 
+# IDEs / Editors
+.vscode/
+.idea/
+
+# Vercel
+.vercel/
+
 # Pickle files (optional - include if you don't want them in git)
+# *.pkl

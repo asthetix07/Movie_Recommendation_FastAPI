@@ -321,12 +321,15 @@ def health():
 async def home(
     category: str = Query("popular"),
     limit: int = Query(24, ge=1, le=50),
+    page: int = Query(1, ge=1, le=500),
+    region: Optional[str] = Query(None),
 ):
     """
     Home feed for Streamlit (posters).
     category:
       - trending (trending/movie/day)
       - popular, top_rated, upcoming, now_playing  (movie/{category})
+    Supports optional region (e.g. US, AE, AT) and page params.
     """
     try:
         if category == "trending":
@@ -336,7 +339,10 @@ async def home(
         if category not in {"popular", "top_rated", "upcoming", "now_playing"}:
             raise HTTPException(status_code=400, detail="Invalid category")
 
-        data = await tmdb_get(f"/movie/{category}", {"language": "en-US", "page": 1})
+        params: Dict[str, Any] = {"language": "en-US", "page": page}
+        if region:
+            params["region"] = region
+        data = await tmdb_get(f"/movie/{category}", params)
         return await tmdb_cards_from_results(data.get("results", []), limit=limit)
 
     except HTTPException:
