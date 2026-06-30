@@ -1,0 +1,10 @@
+# Ignore Streamlit frontend
+app.py
+.streamlit/
+supervisord.conf
+
+# Ignore local dev files
+venv/
+.git/
+movies.ipynb
+tfidf.pkl

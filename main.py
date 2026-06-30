@@ -47,12 +47,10 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DF_PATH = os.path.join(BASE_DIR, "df.pkl")
 INDICES_PATH = os.path.join(BASE_DIR, "indices.pkl")
 TFIDF_MATRIX_PATH = os.path.join(BASE_DIR, "tfidf_matrix.pkl")
-TFIDF_PATH = os.path.join(BASE_DIR, "tfidf.pkl")
 
 df: Optional[pd.DataFrame] = None
 indices_obj: Any = None
 tfidf_matrix: Any = None
-tfidf_obj: Any = None
 
 TITLE_TO_IDX: Optional[Dict[str, int]] = None
 
@@ -282,7 +280,7 @@ async def attach_tmdb_card_by_title(title: str) -> Optional[TMDBMovieCard]:
 # =========================
 @app.on_event("startup")
 def load_pickles():
-    global df, indices_obj, tfidf_matrix, tfidf_obj, TITLE_TO_IDX
+    global df, indices_obj, tfidf_matrix, TITLE_TO_IDX
 
     # Load df
     with open(DF_PATH, "rb") as f:
@@ -296,9 +294,8 @@ def load_pickles():
     with open(TFIDF_MATRIX_PATH, "rb") as f:
         tfidf_matrix = pickle.load(f)
 
-    # Load tfidf vectorizer (optional, not used directly here)
-    with open(TFIDF_PATH, "rb") as f:
-        tfidf_obj = pickle.load(f)
+    # tfidf_obj is not needed in the API, so we skip loading tfidf.pkl to save memory and avoid scikit-learn dependency.
+    pass
 
     # Build normalized map
     TITLE_TO_IDX = build_title_to_idx_map(indices_obj)
