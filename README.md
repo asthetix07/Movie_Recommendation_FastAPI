@@ -1,13 +1,17 @@
 <p align="center">
-  <h1 align="center">🎬 Movie Recommendation System</h1>
+  <h1 align="center">🎬 Cinewatch</h1>
   <p align="center">
     A full-stack movie recommendation engine powered by <strong>FastAPI</strong>, <strong>Streamlit</strong>, and <strong>TF-IDF</strong> content-based filtering — enriched with live data from the <strong>TMDB API</strong>.
   </p>
   <p align="center">
+    <a href="https://cinewatch-vercel.streamlit.app/"><img src="https://img.shields.io/badge/Live%20Demo-Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white" alt="Live Demo"/></a>
     <a href="#features"><img src="https://img.shields.io/badge/Features-✨-blueviolet?style=for-the-badge" alt="Features"/></a>
     <a href="#tech-stack"><img src="https://img.shields.io/badge/Stack-FastAPI%20%2B%20Streamlit-009688?style=for-the-badge" alt="Tech Stack"/></a>
     <a href="#docker"><img src="https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker"/></a>
     <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python"/></a>
+  </p>
+  <p align="center">
+    🔗 <strong>Live Demo:</strong> <a href="https://cinewatch-vercel.streamlit.app/">CineMatch — AI Movie Recommendations · Streamlit</a>
   </p>
 </p>
 
@@ -24,6 +28,8 @@ This project is a **content-based movie recommendation system** that combines:
 
 > Search for any movie → get detailed info → receive personalized recommendations powered by both content similarity and genre matching.
 
+> 🚀 **Try it now:** [CineMatch — AI Movie Recommendations · Streamlit](https://cinewatch-vercel.streamlit.app/)
+
 ---
 
 ## ✨ Features
@@ -35,7 +41,6 @@ This project is a **content-based movie recommendation system** that combines:
 | 🎭 **Genre Recommendations** | Discover popular movies in the same genre via TMDB's discover API |
 | 🏠 **Home Feed** | Browse trending, popular, top-rated, upcoming, and now-playing movies |
 | 📄 **Movie Details** | Full movie details including overview, genres, release date, poster & backdrop |
-| 🐳 **Docker Ready** | Single-command deployment with Docker using Supervisor to run both services |
 | ⚡ **Async API** | Fully asynchronous FastAPI backend with `httpx` for non-blocking TMDB calls |
 
 ---
@@ -78,7 +83,7 @@ This project is a **content-based movie recommendation system** that combines:
 ## 📂 Project Structure
 
 ```
-Movie_Recommendation_FastAPI/
+Cinewatch/
 ├── main.py               # FastAPI backend — API routes & TF-IDF logic
 ├── app.py                # Streamlit frontend — interactive UI
 ├── movies.ipynb          # Jupyter notebook — data preprocessing & model training
@@ -106,8 +111,8 @@ Movie_Recommendation_FastAPI/
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/<your-username>/Movie_Recommendation_FastAPI.git
-cd Movie_Recommendation_FastAPI
+git clone https://github.com/<your-username>/Cinewatch.git
+cd Cinewatch
 ```
 
 ### 2. Create a Virtual Environment
@@ -160,15 +165,15 @@ streamlit run app.py --server.port 8501
 
 ```bash
 # Build the image
-docker build -t movie-recommender .
+docker build -t cinewatch .
 
 # Run the container
 docker run -d \
-  --name movie-rec \
+  --name cinewatch \
   -p 8000:8000 \
   -p 8501:8501 \
   --env-file .env \
-  movie-recommender
+  cinewatch
 ```
 
 | Service | URL |
