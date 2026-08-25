@@ -2,11 +2,14 @@ import os
 import html as html_lib
 import requests
 import streamlit as st
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # =====================================================================
 # CONFIG
 # =====================================================================
-API_BASE = os.environ.get("API_BASE")
+API_BASE = (os.environ.get("API_BASE") or "http://localhost:8000").rstrip("/")
 TMDB_IMG = "https://image.tmdb.org/t/p/w500"
 
 st.set_page_config(
