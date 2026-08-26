@@ -13,5 +13,5 @@ jobs:
       - name: Ping Streamlit App
         run: |
           # Replace the URL below with your actual Streamlit Cloud URL
-          curl -s -L "https://movie-recommendation-fast-api.vercel.app" > /dev/null
+          curl -s -L "https://cinewatch-vercel.streamlit.app" > /dev/null
           echo "Streamlit app pinged successfully at $(date)"
