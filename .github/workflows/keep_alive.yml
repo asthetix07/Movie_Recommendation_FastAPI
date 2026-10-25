@@ -11,47 +11,68 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Resume Streamlit app
-        shell: bash
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Playwright
         run: |
-          set -u
+          npm install playwright
+          npx playwright install --with-deps chromium
 
-          app_url="https://cinewatch-vercel.streamlit.app"
-          resume_url="$app_url/api/v2/app/resume"
-          cookie_jar="/tmp/streamlit-cookies.txt"
-          machine_id="$(cat /proc/sys/kernel/random/uuid)"
+      - name: Open Streamlit app
+        run: |
+          cat > /tmp/keep-alive.js <<'EOF'
+          const { chromium } = require("playwright");
 
-          response_file="/tmp/streamlit-response.txt"
+          (async () => {
+            const browser = await chromium.launch({
+              headless: true
+            });
 
-          http_code="$(
-            curl \
-              --silent \
-              --show-error \
-              --request POST \
-              --url "$resume_url" \
-              --output "$response_file" \
-              --write-out "%{http_code}" \
-              --connect-timeout 30 \
-              --max-time 60 \
-              --retry 3 \
-              --retry-delay 5 \
-              --cookie "$cookie_jar" \
-              --cookie-jar "$cookie_jar" \
-              --header "accept: application/json, text/plain, */*" \
-              --header "content-length: 0" \
-              --header "origin: $app_url" \
-              --header "referer: $app_url/" \
-              --header "x-streamlit-machine-id: $machine_id" \
-              --data-binary ""
-          )"
+            const page = await browser.newPage({
+              userAgent:
+                "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 " +
+                "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+            });
 
-          echo "Resume endpoint returned HTTP $http_code"
-          cat "$response_file"
-          echo
+            page.on("response", response => {
+              const url = response.url();
 
-          if [[ "$http_code" -ge 200 && "$http_code" -lt 300 ]]; then
-            echo "Streamlit app resumed successfully at $(date -u)"
-          else
-            echo "Streamlit resume request failed with HTTP $http_code" >&2
-            exit 1
-          fi
+              if (
+                url.includes("/api/") ||
+                url.includes("streamlit.app")
+              ) {
+                console.log(`${response.status()} ${url}`);
+              }
+            });
+
+            try {
+              const response = await page.goto(
+                "https://cinewatch-vercel.streamlit.app/",
+                {
+                  waitUntil: "domcontentloaded",
+                  timeout: 120000
+                }
+              );
+
+              console.log(`Initial page response: ${response?.status()}`);
+              console.log(`Final URL: ${page.url()}`);
+
+              // Give Streamlit enough time to establish its session
+              // and send the resume request.
+              await page.waitForTimeout(30000);
+
+              console.log(`Page title: ${await page.title()}`);
+              console.log("Streamlit app keep-alive request completed.");
+            } finally {
+              await browser.close();
+            }
+          })().catch(error => {
+            console.error(error);
+            process.exit(1);
+          });
+          EOF
+
+          node /tmp/keep-alive.js
