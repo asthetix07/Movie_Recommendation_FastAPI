@@ -1,78 +1,47 @@
-name: Keep Streamlit App Awake
+name: Keep Streamlit app awake
 
 on:
   schedule:
-    # Runs every 6 hours
-    - cron: "0 */6 * * *"
-  workflow_dispatch:
+    - cron: "0 */6 * * *"   # every 6 hours (UTC)
+  workflow_dispatch:         # lets you run it manually to test
 
 jobs:
-  ping:
+  wake:
     runs-on: ubuntu-latest
-
+    timeout-minutes: 5
     steps:
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-python@v5
         with:
-          node-version: 22
+          python-version: "3.12"
 
       - name: Install Playwright
         run: |
-          npm install playwright
-          npx playwright install --with-deps chromium
+          pip install playwright
+          playwright install --with-deps chromium
 
-      - name: Open Streamlit app
+      - name: Open app and wake if sleeping
+        env:
+          APP_URL: https://cinewatch-vercel.streamlit.app/
         run: |
-          cat > /tmp/keep-alive.js <<'EOF'
-          const { chromium } = require("playwright");
+          python - <<'EOF'
+          import os, re
+          from playwright.sync_api import sync_playwright
 
-          (async () => {
-            const browser = await chromium.launch({
-              headless: true
-            });
+          url = os.environ["APP_URL"]
+          with sync_playwright() as p:
+              browser = p.chromium.launch()
+              page = browser.new_page()
+              page.goto(url, wait_until="domcontentloaded")
+              page.wait_for_timeout(5000)
 
-            const page = await browser.newPage({
-              userAgent:
-                "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 " +
-                "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
-            });
+              btn = page.get_by_role("button", name=re.compile("get this app back up", re.I))
+              if btn.count() > 0:
+                  btn.first.click()
+                  print("App was asleep, clicked wake button.")
+                  page.wait_for_timeout(30000)
+              else:
+                  print("No wake button found, app is already awake.")
+                  page.wait_for_timeout(10000)
 
-            page.on("response", response => {
-              const url = response.url();
-
-              if (
-                url.includes("/api/") ||
-                url.includes("streamlit.app")
-              ) {
-                console.log(`${response.status()} ${url}`);
-              }
-            });
-
-            try {
-              const response = await page.goto(
-                "https://cinewatch-vercel.streamlit.app/",
-                {
-                  waitUntil: "domcontentloaded",
-                  timeout: 120000
-                }
-              );
-
-              console.log(`Initial page response: ${response?.status()}`);
-              console.log(`Final URL: ${page.url()}`);
-
-              // Give Streamlit enough time to establish its session
-              // and send the resume request.
-              await page.waitForTimeout(30000);
-
-              console.log(`Page title: ${await page.title()}`);
-              console.log("Streamlit app keep-alive request completed.");
-            } finally {
-              await browser.close();
-            }
-          })().catch(error => {
-            console.error(error);
-            process.exit(1);
-          });
+              browser.close()
           EOF
-
-          node /tmp/keep-alive.js
