@@ -2,45 +2,56 @@ name: Keep Streamlit App Awake
 
 on:
   schedule:
-    # Runs every 6 hours to prevent Streamlit Community Cloud from sleeping
-    - cron: '0 */6 * * *'
+    # Runs every 6 hours
+    - cron: "0 */6 * * *"
   workflow_dispatch:
 
 jobs:
   ping:
     runs-on: ubuntu-latest
+
     steps:
       - name: Resume Streamlit app
+        shell: bash
         run: |
-          set -euo pipefail
+          set -u
 
           app_url="https://cinewatch-vercel.streamlit.app"
           resume_url="$app_url/api/v2/app/resume"
           cookie_jar="/tmp/streamlit-cookies.txt"
+          machine_id="$(cat /proc/sys/kernel/random/uuid)"
 
-          # Establish a session and obtain the current CSRF cookie.
-          curl --fail-with-body --silent --show-error --location \
-            --cookie "$cookie_jar" \
-            --cookie-jar "$cookie_jar" \
-            "$app_url/" > /dev/null
+          response_file="/tmp/streamlit-response.txt"
 
-          csrf_token="$(awk '$6 == "_streamlit_csrf" { print $7 }' "$cookie_jar")"
+          http_code="$(
+            curl \
+              --silent \
+              --show-error \
+              --request POST \
+              --url "$resume_url" \
+              --output "$response_file" \
+              --write-out "%{http_code}" \
+              --connect-timeout 30 \
+              --max-time 60 \
+              --retry 3 \
+              --retry-delay 5 \
+              --cookie "$cookie_jar" \
+              --cookie-jar "$cookie_jar" \
+              --header "accept: application/json, text/plain, */*" \
+              --header "content-length: 0" \
+              --header "origin: $app_url" \
+              --header "referer: $app_url/" \
+              --header "x-streamlit-machine-id: $machine_id" \
+              --data-binary ""
+          )"
 
-          if [ -z "$csrf_token" ]; then
-            echo "Unable to obtain the Streamlit CSRF token" >&2
+          echo "Resume endpoint returned HTTP $http_code"
+          cat "$response_file"
+          echo
+
+          if [[ "$http_code" -ge 200 && "$http_code" -lt 300 ]]; then
+            echo "Streamlit app resumed successfully at $(date -u)"
+          else
+            echo "Streamlit resume request failed with HTTP $http_code" >&2
             exit 1
           fi
-
-          curl --fail-with-body --silent --show-error --location \
-            --request POST \
-            --cookie "$cookie_jar" \
-            --header 'accept: application/json, text/plain, */*' \
-            --header 'content-length: 0' \
-            --header "origin: $app_url" \
-            --header "referer: $app_url/" \
-            --header "x-csrf-token: $csrf_token" \
-            --header "x-streamlit-machine-id: $(cat /proc/sys/kernel/random/uuid)" \
-            "$resume_url"
-
-          echo
-          echo "Streamlit app resumed successfully at $(date -u)"
