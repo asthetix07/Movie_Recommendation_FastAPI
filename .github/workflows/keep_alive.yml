@@ -4,14 +4,43 @@ on:
   schedule:
     # Runs every 6 hours to prevent Streamlit Community Cloud from sleeping
     - cron: '0 */6 * * *'
-  workflow_dispatch: # Allows manual trigger from GitHub Actions UI
+  workflow_dispatch:
 
 jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping Streamlit App
+      - name: Resume Streamlit app
         run: |
-          curl -s -L -b /tmp/cookies.txt -c /tmp/cookies.txt "https://cinewatch-vercel.streamlit.app" > /dev/null
-          echo "Streamlit app pinged successfully at $(date)"
+          set -euo pipefail
 
+          app_url="https://cinewatch-vercel.streamlit.app"
+          resume_url="$app_url/api/v2/app/resume"
+          cookie_jar="/tmp/streamlit-cookies.txt"
+
+          # Establish a session and obtain the current CSRF cookie.
+          curl --fail-with-body --silent --show-error --location \
+            --cookie "$cookie_jar" \
+            --cookie-jar "$cookie_jar" \
+            "$app_url/" > /dev/null
+
+          csrf_token="$(awk '$6 == "_streamlit_csrf" { print $7 }' "$cookie_jar")"
+
+          if [ -z "$csrf_token" ]; then
+            echo "Unable to obtain the Streamlit CSRF token" >&2
+            exit 1
+          fi
+
+          curl --fail-with-body --silent --show-error --location \
+            --request POST \
+            --cookie "$cookie_jar" \
+            --header 'accept: application/json, text/plain, */*' \
+            --header 'content-length: 0' \
+            --header "origin: $app_url" \
+            --header "referer: $app_url/" \
+            --header "x-csrf-token: $csrf_token" \
+            --header "x-streamlit-machine-id: $(cat /proc/sys/kernel/random/uuid)" \
+            "$resume_url"
+
+          echo
+          echo "Streamlit app resumed successfully at $(date -u)"
